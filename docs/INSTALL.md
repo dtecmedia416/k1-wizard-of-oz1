@@ -173,8 +173,21 @@ The SDK provides Python access to K1 movement controls and audio hardware.
 
 **Windows:**
 - Install Git: https://git-scm.com
-- Install CMake: https://cmake.org/download
-- Install Visual Studio Build Tools — select the **C++ workload**
+Visual Studio Components
+
+Install Microsoft C++ Build Tools (required for some Python dependencies)
+
+Download:
+https://visualstudio.microsoft.com/visual-cpp-build-tools/
+During installation, select:
+
+Desktop development with C++
+MSVC v143 build tools (or newer)
+Windows 10/11 SDK
+
+Why this is required
+Some Python packages (e.g., Whisper dependencies) include compiled components.
+These tools enable your system to build and install those packages successfully.
 
 **macOS:**
 ```bash
