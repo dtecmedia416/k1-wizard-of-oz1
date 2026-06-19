@@ -10,238 +10,328 @@ from scratch. Estimated time: **1.5 to 2.5 hours** on first install.
 
 ---
 
-## Prerequisites
 
-Before you begin, confirm you have:
 
-- [ ] A Booster K1 EDU robot (firmware v1.6+ recommended)
-- [ ] A laptop or server with at least 16 GB RAM and a discrete NVIDIA GPU
-- [ ] Python 3.10 or higher installed
-- [ ] Git installed
-- [ ] ffmpeg installed (see Step 3)
-- [ ] A local WiFi network both your laptop and K1 can join
+***
 
----
+# K1 Wizard-of-Oz Dashboard
 
-## Step 1 — Clone the repository
+## Windows Setup Guide with Technical Explanation
 
-```bash
+Hillsborough College AI Innovation Center · AI PREP4WORK Initiative
+
+***
+
+## Overview
+
+This guide explains not only how to install the K1 Wizard-of-Oz Dashboard on a Windows system, but also why each step is necessary and what processes are occurring within the system.
+
+The completed system integrates multiple components into a real-time pipeline:
+
+* Speech recognition (Whisper)
+* Language model processing (Ollama or cloud LLMs)
+* Speech synthesis (Piper)
+* Robot control (Booster SDK)
+* Web-based control interface (Flask dashboard)
+
+***
+
+## System Architecture (Conceptual Model)
+
+The system operates as a sequential pipeline:
+
+```
+Audio Input → Speech-to-Text → Language Model → Text-to-Speech → Robot Output
+```
+
+Each setup step enables one or more components of this pipeline.
+
+***
+
+## Step 1 — Clone the Repository
+
+```powershell
 git clone https://github.com/TechPlayzone/k1-wizard-of-oz.git
 cd k1-wizard-of-oz
 ```
 
----
+### Purpose
 
-## Step 2 — Create your config file
+This step downloads the complete application source code from the remote GitHub repository to the local machine.
 
-```bash
-cp .env.example .env
+### Explanation
+
+The repository contains:
+
+* Backend application (Flask server)
+* Frontend interface (dashboard)
+* Integration modules for audio, AI processing, and robot control
+* Configuration templates and scripts
+
+The `git clone` operation creates a local copy of this project so it can be executed and modified. Without this step, the system cannot run because no executable code exists locally.
+
+***
+
+## Step 2 — Create the Configuration File
+
+```powershell
+copy .env.example .env
+notepad .env
 ```
 
-Open `.env` in a text editor and fill in at minimum:
+### Purpose
+
+The `.env` file provides runtime configuration parameters required by the application.
+
+### Explanation
+
+This file defines critical system variables such as:
 
 ```
-K1_IP=<your K1's IP address on the local network>
-LLM_PROVIDER=ollama          # start with ollama — no API key needed
-ADMIN_PASSWORD=<strong password of your choice>
+K1_IP=192.168.X.X
+LLM_PROVIDER=ollama
+ADMIN_PASSWORD=your_password
 ```
 
-To find the K1's IP address: check your router's connected devices list,
-or SSH into the K1 (`ssh booster@<IP>`) and run `hostname -I`.
+* `K1_IP`: Enables network communication with the robot
+* `LLM_PROVIDER`: Determines which AI model is used
+* `ADMIN_PASSWORD`: Secures system configuration access
 
----
+At startup, the backend reads this file and configures its behavior accordingly. This approach separates configuration from code, which improves maintainability and security.
 
-## Step 3 — Install ffmpeg
+Without a valid `.env` file, the application cannot correctly locate or control the robot.
 
-ffmpeg is required by Whisper for audio processing.
+***
 
-**Ubuntu / Debian:**
-```bash
-sudo apt update && sudo apt install -y ffmpeg
-```
+## Step 3 — Install FFmpeg
 
-**macOS:**
-```bash
-brew install ffmpeg
-```
+### Purpose
 
-**Windows:**
-Download from https://ffmpeg.org/download.html and add to your PATH.
+FFmpeg is required for audio preprocessing used by the Whisper speech recognition model.
 
----
+### Explanation
 
-## Step 4 — Install Python dependencies
+Whisper does not directly accept raw microphone input. Audio must be:
 
-```bash
+* Decoded
+* Reformatted
+* Converted into a compatible waveform structure
+
+FFmpeg performs these transformations.
+
+For example:
+
+* Converts compressed audio into PCM format
+* Ensures consistent sampling rates
+* Normalizes audio streams
+
+Without FFmpeg, speech-to-text processing will fail, and the system will not be able to interpret spoken input.
+
+***
+
+## Step 4 — Install Python Dependencies
+
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-This installs Flask, Whisper, Piper TTS, the Anthropic SDK, the OpenAI SDK,
-and the Booster K1 Python SDK. Allow 5–10 minutes on first run.
+### Purpose
 
----
+This step installs all required Python libraries needed for the system to function.
 
-## Step 5 — Install Ollama and pull Llama 3
+### Explanation
 
-Ollama runs the LLM locally with no internet or API key required.
+The application depends on several libraries, including:
 
-```bash
-# Linux / macOS
-curl -fsSL https://ollama.com/install.sh | sh
+* Flask: Handles the web server and API endpoints
+* Whisper: Performs speech recognition
+* Piper: Generates synthesized speech
+* Booster SDK: Interfaces with robot hardware
+* LLM SDKs: Enable communication with AI models
 
-# Windows: download installer from https://ollama.com/download
-```
+The use of a virtual environment (`venv`) ensures that dependencies are isolated from the global Python installation. This prevents version conflicts and improves reproducibility.
 
-Pull the Llama 3 model (~4 GB download):
+Without installing these dependencies, the application will fail to start due to missing modules.
 
-```bash
+***
+
+## Step 5 — Install Ollama and Pull Llama 3
+
+```powershell
 ollama pull llama3
 ```
 
-Verify it works:
-```bash
-ollama run llama3 "Hello, are you working?"
-```
+### Purpose
 
----
+This step installs the local language model used for generating responses.
 
-## Step 6 — Download a Piper voice model
+### Explanation
 
-Piper TTS converts the LLM's text response to speech.
-Create a `voices/` folder and download a voice:
+Ollama is a runtime that hosts large language models locally. The `llama3` model provides the system with natural language understanding and generation capabilities.
 
-```bash
-mkdir -p voices
+When a user speaks, the transcribed text is passed to the language model, which produces a contextual response.
+
+Advantages of using a local model include:
+
+* No dependency on internet connectivity after installation
+* No transmission of user data to external services
+* Reduced latency for responses
+
+Without this step, the system lacks the ability to generate intelligent responses and cannot complete the interaction loop.
+
+***
+
+## Step 6 — Download a Piper Voice Model
+
+```powershell
+mkdir voices
 cd voices
-
-# US English male (default)
-wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
 ```
 
-Update `PIPER_VOICE_PATH` in your `.env` to match the downloaded file path.
+(then download `.onnx` and `.json` files)
 
-Other available voices: see https://github.com/rhasspy/piper/blob/master/VOICES.md
+### Purpose
 
----
+This step installs the speech synthesis model used to convert text into audible output.
 
-## Step 7 — Power on and connect the K1
+### Explanation
 
-1. Place the K1 on a flat surface with room to stand.
-2. Power on — wait approximately 60 seconds for full boot.
-3. Connect the K1 to the same WiFi network as your laptop.
-4. Confirm connectivity:
+After the language model generates a text response, it must be converted into audio. Piper performs this conversion using neural voice models.
 
-```bash
-python scripts/test_connection.py
+The `.onnx` file represents the trained voice model, while the `.json` file contains configuration parameters such as phoneme mappings and synthesis settings.
+
+The system uses the path defined in:
+
+```
+PIPER_VOICE_PATH
 ```
 
-Expected output:
-```
-[OK] K1 reachable at 192.168.0.176
-[OK] Ollama responding at http://localhost:11434
-[OK] Dashboard will be available at http://localhost:5000
-```
+to locate and execute the model during runtime.
 
----
+Without Piper, the system can generate text responses but cannot produce speech output.
 
-## Step 8 — Start the backend
+***
 
-```bash
-python backend/app.py
+## Step 7 — Connect to the K1 Robot
+
+```powershell
+python scripts\test_connection.py
 ```
 
-Or use the convenience script:
+### Purpose
 
-```bash
-bash scripts/run.sh
+This step verifies network connectivity between the local machine and the robot.
+
+### Explanation
+
+The robot is controlled over a TCP/IP network using its assigned IP address. The test script validates:
+
+* Reachability of the K1 device
+* Availability of the Ollama service
+* Readiness of the dashboard server
+
+If the robot is not reachable, commands such as movement or audio playback cannot be executed.
+
+Reliable connectivity is essential because all control commands and audio streams are transmitted in real time.
+
+***
+
+## Step 8 — Start the Backend Application
+
+```powershell
+python backend\app.py
 ```
 
----
+### Purpose
 
-## Step 9 — Open the dashboard
+This starts the central orchestration service for the entire system.
 
-Navigate to **http://localhost:5000** in Chrome or Firefox.
+### Explanation
 
-First-time setup: click **Admin** in the header and enter your admin password
-to confirm K1 IP, network settings, and default LLM provider. Regular users
-never see this screen.
+The backend application performs multiple roles:
 
----
+* Hosts the web dashboard
+* Manages API endpoints
+* Connects all subsystems (audio, AI, robot)
+* Maintains session state and configuration
 
-## Network isolation (recommended)
+Internally, it routes data through the pipeline:
 
-The K1 EDU ships with ByteDance/Doubao as its default LLM. Even though this
-pipeline bypasses Doubao entirely, we recommend connecting both the K1 and your
-inference laptop to a **dedicated mobile hotspot** that is separate from your
-institution's campus network. This prevents any potential data from reaching
-the K1's firmware services.
+1. Receives audio input
+2. Sends it to Whisper
+3. Passes transcription to the language model
+4. Sends generated text to Piper
+5. Dispatches audio and commands to the robot
 
-Tested hardware: Franklin T10, Inseego 5G MiFi (available via T-Mobile
-state contract in Florida).
+Without the backend running, none of the system components are connected or operational.
 
----
+***
 
-## NVIDIA Isaac Sim (optional)
+## Step 9 — Access the Dashboard
 
-To use the Isaac Sim toggle in the Live panel:
+Navigate to:
 
-1. Install NVIDIA Isaac Sim on your inference server (requires NVIDIA GPU).
-   Docs: https://docs.omniverse.nvidia.com/isaacsim/latest/index.html
+```
+http://localhost:5000
+```
 
-2. Launch Isaac Sim with WebRTC streaming enabled:
-   ```bash
-   ./isaac-sim.sh --/app/livestream/enabled=true
-   ```
+### Purpose
 
-3. Update `ISAAC_SERVER_IP` in your `.env` to your server's local IP.
+The dashboard provides a graphical interface for interacting with the system.
 
-4. In the dashboard, click **Isaac sim** in the Live panel toggle.
-   Then click **Connect to simulator**.
+### Explanation
 
-The K1 URDF (`K1_22dof.urdf`) is available at:
-https://github.com/BoosterRobotics/booster_assets
+The dashboard allows users to:
 
----
+* View conversation history
+* Control robot movement
+* Trigger gestures
+* Monitor system status
+* Select AI providers
 
-## Using API providers (Anthropic / OpenAI)
+The term `localhost` refers to the local machine, indicating that the server is running on the same system.
 
-The dashboard supports Anthropic Claude and OpenAI GPT-4o as drop-in LLM
-replacements. API keys are **session-scoped** — they are stored in browser
-memory only and cleared when the tab is closed. Keys are never written to
-disk, logged, or transmitted outside the API call.
+Without the dashboard, interaction would require direct API calls, which is impractical for most users.
 
-To use:
-1. In the Conversation panel, click **Anthropic** or **OpenAI**.
-2. Paste your API key into the key field and click **Apply**.
-3. The robot status strip confirms the active provider.
+***
 
-The K1 must be on a network with internet access when using cloud providers.
+## Integrated System Behavior
 
----
+Once all steps are complete, the system operates as follows:
 
-## Troubleshooting
+1. Audio is captured from the robot or microphone
+2. FFmpeg processes the audio stream
+3. Whisper converts audio into text
+4. The language model generates a response
+5. Piper synthesizes speech from the response
+6. The robot plays the audio and executes any movement commands
+7. The dashboard displays the interaction in real time
 
-See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for common issues including:
+***
 
-- K1 not reachable on network
-- Whisper transcription errors
-- Piper TTS silent output
-- Ollama not responding
-- Movement commands not executing
+## Summary
 
----
+Each step in the setup process enables a specific functional layer:
 
-## Estimated setup times
+| Step                | Function                             |
+| ------------------- | ------------------------------------ |
+| Clone repository    | Provides application code            |
+| Configuration file  | Defines runtime parameters           |
+| FFmpeg              | Enables audio processing             |
+| Python dependencies | Supports application execution       |
+| Ollama              | Provides language model capabilities |
+| Piper               | Enables speech synthesis             |
+| Network connection  | Enables robot control                |
+| Backend launch      | Integrates system components         |
+| Dashboard access    | Provides user interface              |
 
-| Task | First time | Subsequent |
-|---|---|---|
-| Clone + config | 5 min | — |
-| pip install | 10 min | — |
-| Ollama + pull Llama 3 | 20–30 min | — |
-| Piper voice download | 5 min | — |
-| K1 connection test | 5 min | 1 min |
-| **Total** | **~1.5–2.5 hrs** | **~5 min** |
+
+
+***
+
+
 
 ---
 
