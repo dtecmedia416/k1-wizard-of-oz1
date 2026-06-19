@@ -71,29 +71,128 @@ K1 mic array → Whisper STT → LLM (your choice) → Piper TTS → K1 speaker 
 
 ---
 
-## Quick start
 
-```bash
-# 1. Clone the repo
+***
+
+# Quick Start (Windows)
+
+## 1. Check Python
+
+Open **PowerShell** and run:
+
+```powershell
+python --version
+```
+
+**Use:**
+
+* Python 3.10.x (recommended)
+* Python 3.11.x
+
+**Avoid:**
+
+* Python 3.12+
+
+If Python is not installed, download it:  
+<https://www.python.org/downloads/windows/>
+
+Restart PowerShell and check again.
+
+***
+
+## Fix: Python Not Found (Windows)
+
+If you see:
+
+```
+Python was not found...
+```
+
+Go to:
+
+```
+Settings → Apps → Advanced app settings → App execution aliases
+```
+
+Turn OFF:
+
+* Python.exe
+* Python3.exe
+
+Restart PowerShell.
+
+***
+
+# Setup
+
+## 2. Clone the Repository
+
+```powershell
 git clone https://github.com/TechPlayzone/k1-wizard-of-oz.git
 cd k1-wizard-of-oz
-
-# 2. Install Python dependencies
-pip install -r requirements.txt
-
-# 3. Copy the example config and fill in your K1's IP
-cp .env.example .env
-# Edit .env — set K1_IP, LLM_PROVIDER, OLLAMA_URL
-
-# 4. Pull the Llama 3 model (first time only, ~4 GB)
-ollama pull llama3
-
-# 5. Start the backend
-python backend/app.py
-
-# 6. Open the dashboard
-# Navigate to http://localhost:5000 in your browser
 ```
+
+***
+
+## 3. Install Dependencies
+
+```powershell
+pip install -r requirements.txt
+```
+
+***
+
+## 4. Create Config File
+
+```powershell
+copy .env.example .env
+notepad .env
+```
+
+Update:
+
+```
+K1_IP=<your robot IP>
+LLM_PROVIDER=ollama
+OLLAMA_URL=http://localhost:11434
+```
+
+***
+
+## 5. Install AI Model
+
+```powershell
+ollama pull llama3
+```
+
+***
+
+## 6. Start the App
+
+```powershell
+python backend\app.py
+```
+
+***
+
+## 7. Open Dashboard
+
+Go to:
+
+```
+http://localhost:5000
+```
+
+***
+
+# Notes
+
+* K1 and your computer must be on the same network
+* Run `ollama serve` if needed
+* Check `.env` if something does not work
+
+***
+
 
 Full setup guide for partner colleges: [`docs/SETUP.md`](docs/SETUP.md)
 
