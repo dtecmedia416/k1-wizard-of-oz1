@@ -59,101 +59,329 @@ K1 mic array → Whisper STT → LLM (your choice) → Piper TTS → K1 speaker 
 
 ---
 
-## Software requirements
+***
 
-- Python 3.10+
-- [Ollama](https://ollama.com) with `llama3` model pulled
-- [Piper TTS](https://github.com/rhasspy/piper) + at least one voice model
-- [OpenAI Whisper](https://github.com/openai/whisper) (`pip install openai-whisper`)
-- Booster Robotics Python SDK (`pip install booster_robotics_sdk_python`)
-- Flask (`pip install flask`)
-- ffmpeg (required by Whisper)
+# K1 Wizard-of-Oz Dashboard — Windows Setup Guide
 
----
+## Windows Environment Notes
 
-## Quick start
+* Recommended: **Windows 11 (64-bit)**
+* Use **PowerShell** (preferred) or Command Prompt
+* Optional but helpful: **Windows Terminal**
+* You may need **Administrator rights** for some installs
 
-```bash
-# 1. Clone the repo
+***
+
+#  Software Requirements (Windows)
+
+Install the following:
+
+### 1. Python
+
+* Install **Python 3.10+** from: <https://www.python.org/downloads/>
+* During install, check: `Add Python to PATH`
+
+Verify:
+
+```powershell
+python --version
+pip --version
+```
+
+***
+
+### 2. Git
+
+Download: <https://git-scm.com/download/win>
+
+Verify:
+
+```powershell
+git --version
+```
+
+***
+
+### 3. FFmpeg (Required for Whisper)
+
+1. Download from: <https://ffmpeg.org/download.html>  
+   (Use Windows builds like gyan.dev)
+
+2. Extract to:
+
+```
+C:\ffmpeg
+```
+
+3. Add to PATH:
+
+* Search **“Environment Variables”**
+* Edit `Path`
+* Add:
+
+```
+C:\ffmpeg\bin
+```
+
+Verify:
+
+```powershell
+ffmpeg -version
+```
+
+***
+
+### 4. Ollama (Local LLM option)
+
+Download: <https://ollama.com/download/windows>
+
+Verify:
+
+```powershell
+ollama --version
+```
+
+Pull model:
+
+```powershell
+ollama pull llama3
+```
+
+***
+
+### 5. Piper TTS (Windows)
+
+* Download Windows release from:
+  <https://github.com/rhasspy/piper/releases>
+
+* Extract to something like:
+
+```
+C:\piper
+```
+
+* Download at least one voice model (e.g., `en_US-lessac-medium`)
+
+Example structure:
+
+```
+C:\piper\
+  piper.exe
+  en_US-lessac-medium.onnx
+  en_US-lessac-medium.onnx.json
+```
+
+***
+
+### 6. Python Dependencies
+
+These will be installed from `requirements.txt`, but include:
+
+* Flask
+* Whisper
+* Booster Robotics SDK
+* etc.
+
+***
+
+# Quick Start (Windows)
+
+## 1. Clone Repo
+
+```powershell
 git clone https://github.com/TechPlayzone/k1-wizard-of-oz.git
 cd k1-wizard-of-oz
+```
 
-# 2. Install Python dependencies
+***
+
+## 2. Create Virtual Environment (Recommended)
+
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+***
+
+## 3. Install Dependencies
+
+```powershell
 pip install -r requirements.txt
+```
 
-# 3. Copy the example config and fill in your K1's IP
-cp .env.example .env
-# Edit .env — set K1_IP, LLM_PROVIDER, OLLAMA_URL
+***
 
-# 4. Pull the Llama 3 model (first time only, ~4 GB)
-ollama pull llama3
+## 4. Create Environment Config
 
-# 5. Start the backend
+Windows doesn’t support `cp`, so use:
+
+```powershell
+copy .env.example .env
+```
+
+OR:
+
+```powershell
+copy-item .env.example .env
+```
+
+Edit `.env` in Notepad or VS Code:
+
+```powershell
+notepad .env
+```
+
+Set values:
+
+```
+K1_IP=192.168.X.X
+LLM_PROVIDER=ollama
+OLLAMA_URL=http://localhost:11434
+```
+
+***
+
+## 5. Start Ollama (if using local LLM)
+
+```powershell
+ollama serve
+```
+
+(Leave this running in a separate terminal)
+
+***
+
+## 6. Run Backend
+
+```powershell
+python backend/app.py
+```
+
+***
+
+## 7. Open Dashboard
+
+Open browser:
+
+```
+http://localhost:5000
+```
+
+***
+
+# Windows Replacements for Scripts
+
+The repo includes `.sh` scripts that won’t run natively on Windows. Use these equivalents:
+
+### `install.sh` → Manual (already covered above)
+
+### `run.sh` → PowerShell alternative
+
+Create a file `run.ps1`:
+
+```powershell
+# Activate venv
+.\venv\Scripts\activate
+
+# Start backend
 python backend/app.py
 
-# 6. Open the dashboard
-# Navigate to http://localhost:5000 in your browser
+# Open browser
+Start-Process "http://localhost:5000"
 ```
 
-Full setup guide for partner colleges: [`docs/SETUP.md`](docs/SETUP.md)
+Run:
 
----
-
-## Repository structure
-
-```
-k1-wizard-of-oz/
-├── README.md                  ← You are here
-├── LICENSE                    ← CC BY-NC 4.0
-├── .env.example               ← Config template
-├── requirements.txt           ← Python dependencies
-│
-├── frontend/
-│   └── index.html             ← Wizard-of-Oz dashboard (single file)
-│
-├── backend/
-│   ├── app.py                 ← Flask server — main entry point
-│   ├── config.py              ← Load and validate .env config
-│   ├── llm_router.py          ← Route to Ollama / Anthropic / OpenAI
-│   ├── k1_handler.py          ← Booster SDK — movement + audio
-│   ├── stt.py                 ← Whisper speech-to-text
-│   ├── tts.py                 ← Piper TTS synthesis
-│   └── session_manager.py     ← In-memory session API key store
-│
-├── scripts/
-│   ├── install.sh             ← One-command dependency installer
-│   ├── run.sh                 ← Start Flask + open dashboard
-│   └── test_connection.py     ← Verify K1 reachability before demo
-│
-└── docs/
-    ├── SETUP.md               ← Step-by-step for partner colleges
-    ├── API_REFERENCE.md       ← Flask endpoint documentation
-    ├── TROUBLESHOOTING.md     ← Common issues and fixes
-    └── FIPSE_ACKNOWLEDGMENT.md← Required grant acknowledgment
+```powershell
+.\run.ps1
 ```
 
----
+***
 
-## Security note
+### `test_connection.py`
 
-The K1 EDU runs firmware with ByteDance/Doubao as the default LLM. This pipeline
-**completely bypasses Doubao** — no student voice data ever reaches ByteDance servers.
+Run normally:
 
-For additional isolation, we recommend connecting the K1 and your inference server to a
-**dedicated hotspot** (e.g. Franklin T10 or Inseego 5G) that is separate from your
-institution's campus network. See [`docs/SETUP.md`](docs/SETUP.md) for details.
+```powershell
+python scripts\test_connection.py
+```
 
----
+***
 
-## NVIDIA Isaac Sim integration
+# Networking (Windows Tips)
 
-The dashboard includes a toggle to switch the Live panel between the K1's real camera
-feed and an embedded NVIDIA Isaac Sim view. Isaac Sim must be running on your inference
-server with WebRTC streaming enabled.
+* Ensure **Windows Firewall allows Python**
+* Use **Private Network** setting for your WiFi
+* Confirm K1 is reachable:
 
-Default stream URL: `http://<your-server-ip>:8211/streaming/webrtc-demo/`
+```powershell
+ping 192.168.X.X
+```
 
-See [`docs/SETUP.md`](docs/SETUP.md) → *Isaac Sim setup* for configuration steps.
+***
+
+# Optional: NVIDIA Isaac Sim (Windows)
+
+If running locally:
+
+* Ensure GPU drivers (NVIDIA) are installed
+* WebRTC stream default:
+
+```
+http://<your-ip>:8211/streaming/webrtc-demo/
+```
+
+***
+
+# Windows-Specific Gotchas
+
+### 1. Path Issues
+
+* Use double backslashes in config if needed:
+
+```
+C:\\piper\\piper.exe
+```
+
+***
+
+### 2. Microphone Permissions
+
+* Windows Settings → Privacy → Microphone → Allow access
+
+***
+
+### 3. GPU Support for Whisper (Optional)
+
+Install PyTorch with CUDA if you want acceleration:
+<https://pytorch.org/>
+
+***
+
+### 4. Long Path Errors
+
+Enable long paths (if needed):
+
+```powershell
+git config --system core.longpaths true
+```
+
+***
+
+# Summary (Windows Flow)
+
+1. Install Python, Git, FFmpeg
+2. Install Ollama + Piper
+3. Clone repo
+4. Create `.env`
+5. Install dependencies
+6. Run backend
+7. Open browser UI
+
+***
+
+
 
 ---
 
